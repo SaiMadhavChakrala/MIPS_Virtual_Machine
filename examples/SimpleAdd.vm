@@ -1,0 +1,6 @@
+// SimpleAdd.vm
+function main 0
+push constant 7
+push constant 5
+add
+return
