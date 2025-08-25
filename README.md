@@ -65,9 +65,9 @@ The system provides a basic mapping between VM instructions and their MIPS equiv
 
 ---
 ### Contributions
-CS22B019: `codegen_mips.py`, `lexer.py`
-CS22B033: `SimpleAdd.vm`(example input), `cli.py`
-CS22B060: `parser.py`, `ir.py` , `runtime_mips.s`. 
+- CS22B019: `codegen_mips.py`, `lexer.py`
+- CS22B033: `SimpleAdd.vm`(example input), `cli.py`
+- CS22B060: `parser.py`, `ir.py` , `runtime_mips.s`. 
 
 Currently the VM is converting .vm files to .asm. The appropriate changes will the made in the upcoming modules. 
 
