@@ -8,6 +8,12 @@ The system provides a basic mapping between VM instructions and their MIPS equiv
 
 ---
 
+### Instructions to run
+- Clone the repository.
+- Write your .vm code in the file `examples/SimpleAdd.vm`.
+- Run the command `python3 -m vmc.cli examples/SimpleAdd.vm`.
+- The output file `program.s` is generated in the out folder.
+
 ### Current Capabilities
 - Translates **arithmetic commands** (`add`, `eq`,  `gt`, `and`, `or`, e.t.c) to MIPS instructions.
 - Handles **memory access** (`push`, `pop`) across basic segments (`constant`, `local`, `this`, `that`, e.t.c).
