@@ -13,6 +13,10 @@ struct Instruction {
 class Parser {
 public:
     Parser(const std::string& filename);
+        void parse();
+    void printInstructions() const;
+    const std::vector<Instruction>& getInstructions() const;
+
 
 
 private:

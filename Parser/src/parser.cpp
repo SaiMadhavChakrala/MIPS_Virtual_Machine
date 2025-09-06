@@ -89,9 +89,73 @@ void Parser::parseInstruction(const std::vector<uint8_t>& bytes) {
             instr.operands.push_back(idx);
             break;
         }
+        // --- Stack, Comparison, Logical ---
+        case 0x0E: instr.name = "IDIV"; break;
+        case 0x0F: instr.name = "IEQ"; break;
+        case 0x10: instr.name = "IGT"; break;
+        case 0x11: { // JMPNZ
+            if (bytes.size() < 5) throw std::runtime_error("JMPNZ requires 4 bytes for operand");
+            int addr = bytes[1] | (bytes[2] << 8) | (bytes[3] << 16) | (bytes[4] << 24);
+            instr.name = "JMPNZ";
+            instr.operands.push_back(addr);
+            break;
+        }
+        case 0x12: instr.name = "DUP"; break;
+        case 0x13: instr.name = "SWAP"; break;
+        case 0x14: instr.name = "NOT"; break;
+
+        // --- NEW: Bitwise & System Calls ---
+        case 0x15: instr.name = "AND"; break;
+        case 0x16: instr.name = "OR"; break;
+        case 0x17: instr.name = "XOR"; break;
+        case 0x18: instr.name = "SHL"; break;
+        case 0x19: instr.name = "SHR"; break;
+        case 0x1A: { // SYSCALL
+            if (bytes.size() < 3) throw std::runtime_error("SYSCALL requires 2 bytes for operand");
+            int call_num = bytes[1] | (bytes[2] << 8);
+            instr.name = "SYSCALL";
+            instr.operands.push_back(call_num);
+            break;
+        }
+
+
         default:
             throw std::runtime_error("Unknown opcode: " + std::to_string(opcode));
     }
     instructions.push_back(instr);
 }
 
+
+const std::vector<Instruction>& Parser::getInstructions() const {
+    return instructions;
+}
+
+void Parser::parse() {
+    std::ifstream file(filename);
+    if (!file.is_open()) throw std::runtime_error("Cannot open file: " + filename);
+
+    std::string line;
+    bool headerParsed = false;
+
+    while (std::getline(file, line)) {
+        if (line.empty()) continue;
+
+        auto bytes = hexStringToBytes(line);
+        if (!headerParsed) {
+            parseHeader(bytes);
+            headerParsed = true;
+        } else {
+            parseInstruction(bytes);
+        }
+    }
+}
+
+void Parser::printInstructions() const {
+    for (const auto& instr : instructions) {
+        std::cout << instr.name;
+        for (int op : instr.operands) {
+            std::cout << " " << op;
+        }
+        std::cout << std::endl;
+    }
+}
