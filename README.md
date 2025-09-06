@@ -1,79 +1,123 @@
-# Virtual Machine – Status Report
+
+# Virtual Machine
+
+This project is a two-stage compiler that translates a custom virtual machine bytecode into MIPS assembly code.
+
+## Architecture and Flow
+
+The VM operates in a clear, multi-step pipeline. It takes a custom bytecode file as input, processes it through a frontend and backend, and produces a standard MIPS assembly file as output.
+
+**`Input .vbm code`** ➡️ **`Parser (Frontend)`** ➡️ **`Intermediate Representation (IR)`** ➡️ **`MIPS Generator (Backend)`** ➡️ **`Output .s File`**
+
+1.  **Input File (`.vbm format`)**: A text file containing hexadecimal strings that represent the VM's bytecode.
+    Sample input:
+    ```.vm=
+    4B41545308000000
+    010D000000
+    010A000000
+    15
+    0102000000
+    18
+    1A0100
+    1A0000
+    04
+    ```
+3.  **Parser (Frontend)**: Reads the `.vbm` formatted file, validates its header, and translates the bytecode into a high-level, in-memory Intermediate Representation (IR).
+4.  **Intermediate Representation (IR)**: A vector of `Instruction` structs (e.g., `ICONST`, `IADD`), which is platform-independent.
+5.  **MIPS Generator (Backend)**: Takes the IR and translates each instruction into its corresponding MIPS assembly code sequence.
+6.  **Output File (`.s`)**: A text file containing the final MIPS assembly code, ready to be run in a MIPS simulator like MARS or SPIM.
+    Sample output for the input in the first point:
+    ```assembly=
+    .data
+    newline: .asciiz "\n"
+    .text
+    .globl main
+
+    main:
+        # ICONST
+        li $t0, 13
+        sw $t0, 0($sp)
+        addiu $sp, $sp, -4
+        # ICONST
+        li $t0, 10
+        sw $t0, 0($sp)
+        addiu $sp, $sp, -4
+        # AND
+        # ICONST
+        li $t0, 2
+        sw $t0, 0($sp)
+        addiu $sp, $sp, -4
+        # SHL
+        # SYSCALL
+        # SYSCALL
+        # RET
+        li $v0, 10
+        syscall
+
+        # Default exit
+        li $v0, 10
+        syscall
+
+    ```
 
 
---- 
-### Overview
-This project implements a **stack-based Virtual Machine (VM)** that translates high-level VM instructions(`.vm file`) into **MIPS assembly** (`.asm`) code.  
-The system provides a basic mapping between VM instructions and their MIPS equivalents, enabling execution on MIPS processors or simulators.
 
----
+## Components
 
-### Instructions to run
-- Clone the repository.
-- Write your .vm code in the file `examples/SimpleAdd.vm`.
-- Run the command `python3 -m vmc.cli examples/SimpleAdd.vm`.
-- The output file `program.s` is generated in the out folder.
+The project is broken down into three main components:
 
-### Current Capabilities
-- Translates **arithmetic commands** (`add`, `eq`,  `gt`, `and`, `or`, e.t.c) to MIPS instructions.
-- Handles **memory access** (`push`, `pop`) across basic segments (`constant`, `local`, `this`, `that`, e.t.c).
-- Generates **branching commands** (`label`, `goto`, `if-goto`).
-- Produces **valid MIPS assembly files** with:
-  - **Directives** (`.text`, `.data`, `.global main`)
-  - **Labels** for function entry points and branching.
-  - **System call usage** for I/O (if implemented later).
+### 1. Parser (`parser.cpp`, `parser.hpp`)
 
----
+The parser acts as the **compiler's frontend**. Its primary responsibility is to read the source `.vbm` code and perform lexical and syntactic analysis to produce the Intermediate Representation. It handles:
+- Reading hexadecimal strings from the input code.
+- Validating the "KATS" magic number and instruction count in the header.
+- Translating each bytecode opcode and its operands into an `Instruction` struct.
 
-### File Roles
-- **`VMTranslator.py`**  
-  Entry point. Takes `.vm` input file(s) and produces `.asm` MIPS output.  
-  Orchestrates parsing and code writing.
+### 2. MIPS Generator (`mips_generator.cpp`, `mips_generator.hpp`)
 
-- **`Parser.py`**  
-  - Reads VM source line by line.  
-  - Strips whitespace & comments.  
-  - Classifies command types (`C_ARITHMETIC`, `C_PUSH`, `C_POP`, etc.).  
-  - Extracts arguments.
+The generator is the **compiler's backend**. It takes the platform-agnostic IR from the parser and generates code for a specific target architecture, which in this case is MIPS. It translates instructions like `ICONST` and `IADD` into low-level MIPS assembly for stack manipulation and arithmetic.
 
-- **`CodeWriter.py`**  
-  - Core translation logic.  
-  - Converts VM commands into MIPS assembly.  
-  - Manages labels, jumps, function calls, and return sequences.
+### 3. Main Driver (`main.cpp`)
 
-- **`Main.asm` (output)**  
-  - Generated MIPS assembly file.  
-  - Includes translated instructions with function labels and logic.
+This file orchestrates the compilation process. It initializes the parser to create the IR from the input file and then passes that IR to the MIPS generator to produce the final assembly output file.
 
----
+## Input File Format 
 
-### MIPS Instructions Currently Generated
-**1. Arithmetic & Logic Commands**
-- `add` → `addu $t0, $t1, $t2`
-- `sub` → `subu $t0, $t1, $t2`
-- `neg` → `subu $t0, $zero, $t1`
-- `eq`  → compares two values, pushes result
-- `gt`  → greater-than check
-- `and` → `and $t0, $t1, $t2`
-- `or`  → `or $t0, $t1, $t2`
-- `not` → `nor $t0, $t1, $zero`
+The program expects an input text with a specific format:
+- The **first line** must be the header, containing a 4-byte magic number ("KATS") and a 4-byte little-endian integer for the instruction count.
+- **Subsequent lines** each contain the hexadecimal representation of a single VM instruction.
 
-**2. Memory Access Commands**
-- `push constant x` → load constant into stack
-- `push local x` / `pop local x`
-- `push argument x` / `pop argument x`
-- `push this x` / `pop this x`
+**Example: `program.txt`**
+```
+4B41545303000000    # Header: "KATS", 3 instructions
+010A000000          # ICONST 10
+0119000000          # ICONST 25
+02                  # IADD
+```
 
-**3. Program Flow Commands**
-- `label X` → translates to `(X)`
-- `goto X` → unconditional branch to label
-- `if-goto X` → branch if top of stack ≠ 0
+## How to Compile and Run
 
----
-### Contributions
-- CS22B019: `codegen_mips.py`, `lexer.py`
-- CS22B033: `SimpleAdd.vm`(example input), `cli.py`
-- CS22B060: `parser.py`, `ir.py` , `runtime_mips.s`. 
+- Clone the repository using the following command
+    ```bash!
+    git clone https://github.com/SaiMadhavChakrala/MIPS_Virtual_Machine/
+    ```
+- Compile the code by running the following commands at the root directory of the repository
+    ```bash!
+    cd Parser/src
+    g++ main.cpp parser.cpp mips_generator.cpp -o vm_parser -std=c++17
+    ```
+- Write the output from the assembler or custom vm byte code in the program.txt inside the src folder.
+- Run the following to generate output.s which contains the MIPS assembly
+    ```bash
+    ./vm_parser
+    ```
 
-Currently the VM is converting .vm files to .asm. The appropriate changes will the made in the upcoming modules. 
+## **Contributions**
+Sai Madhav(**CS22B060**): Worked on developing the Parser.cpp to transform VM bytecode into the Intermediate Representation (e.g., ICONST, IADD).
 
+Sampath(**CS22B033**): Worked on developing the mips_generator.cpp which transforms the IR into MIPS assembly code.
+
+Adithya Raghuveer(**CS22B019**): Implemented main.cpp to handle input/output . Also extended Parser.cpp to support a wider range of instructions.
+
+## Future work
+Currently the VM translated the .vbm/byte code from a .txt file to MIPS assembly instructions. In the upcoming modules it will be extended to convert the generated assembly instructions to MIPS machine code while supporting a wider range of instructions.
