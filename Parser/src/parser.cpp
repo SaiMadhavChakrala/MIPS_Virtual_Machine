@@ -7,6 +7,28 @@
 
 Parser::Parser(const std::string& filename) : filename(filename) {}
 
+Parser::Parser(const std::string& hex_data, bool is_preprocessed) 
+    : hex_stream(hex_data), is_stream_based(is_preprocessed) {}
+// hexStringToBytes and parseHeader remain the same...
+
+// NEW helper function to determine instruction length
+int Parser::getOperandSize(uint8_t opcode) {
+    if (format == BytecodeFormat::KATS) {
+        switch (opcode) {
+            case 0x01: case 0x03: case 0x0A: case 0x0B: case 0x11: return 4;
+            case 0x0C: case 0x0D: case 0x1A: return 2;
+            default: return 0;
+        }
+    } else if (format == BytecodeFormat::OATS) {
+        switch (opcode) {
+            case 0x08: case 0x01: case 0x07: case 0x2B: case 0x31: return 4;
+            case 0x2C: case 0x2D: case 0x3A: return 2;
+            default: return 0;
+        }
+    }
+    return 0;
+}
+
 std::vector<uint8_t> Parser::hexStringToBytes(const std::string& hex) {
     std::vector<uint8_t> bytes;
     for (size_t i = 0; i < hex.size(); i += 2) {
@@ -234,22 +256,57 @@ const std::vector<Instruction>& Parser::getInstructions() const {
 }
 
 void Parser::parse() {
-    std::ifstream file(filename);
-    if (!file.is_open()) throw std::runtime_error("Cannot open file: " + filename);
+    // This branch handles the old, line-by-line file format for backward compatibility.
+    if (!is_stream_based) {
+        std::ifstream file(filename);
+        if (!file.is_open()) throw std::runtime_error("Cannot open file: " + filename);
 
-    std::string line;
-    bool headerParsed = false;
+        std::string line;
+        bool headerParsed = false;
 
-    while (std::getline(file, line)) {
-        if (line.empty() || line[0] == '#') continue;
+        while (std::getline(file, line)) {
+            if (line.empty() || line[0] == '#') continue;
 
-        auto bytes = hexStringToBytes(line);
-        if (!headerParsed) {
-            parseHeader(bytes);
-            headerParsed = true;
-        } else {
-            parseInstruction(bytes);
+            auto bytes = hexStringToBytes(line);
+            if (!headerParsed) {
+                parseHeader(bytes);
+                headerParsed = true;
+            } else {
+                parseInstruction(bytes);
+            }
         }
+        return;
+    }
+
+    // --- NEW stream-based parsing logic ---
+    // This logic handles a single, continuous string of hex characters.
+    if (hex_stream.length() < 16) {
+        throw std::runtime_error("Hex stream is too short for a header.");
+    }
+
+    std::string header_str = hex_stream.substr(0, 16);
+    parseHeader(hexStringToBytes(header_str));
+
+    size_t current_pos = 16;
+    for (int i = 0; i < instructionCount; ++i) {
+        if (current_pos + 2 > hex_stream.length()) {
+            throw std::runtime_error("Unexpected end of hex stream.");
+        }
+
+        std::string opcode_str = hex_stream.substr(current_pos, 2);
+        uint8_t opcode = std::stoul(opcode_str, nullptr, 16);
+        
+        int operand_size = getOperandSize(opcode);
+        int instr_total_hex_chars = (1 + operand_size) * 2;
+
+        if (current_pos + instr_total_hex_chars > hex_stream.length()) {
+            throw std::runtime_error("Incomplete instruction in stream.");
+        }
+
+        std::string instr_str = hex_stream.substr(current_pos, instr_total_hex_chars);
+        parseInstruction(hexStringToBytes(instr_str));
+
+        current_pos += instr_total_hex_chars;
     }
 }
 
