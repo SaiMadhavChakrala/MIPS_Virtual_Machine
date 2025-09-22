@@ -1,6 +1,7 @@
 #include "parser.hpp"
 #include "mips_generator.hpp"
 #include "vm_simulator.hpp"
+#include "mips_assembler.hpp"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -47,7 +48,15 @@ int main() {
 
         // --- Stage 3: MIPS Generation ---
         MipsGenerator generator(instructions);
-        generator.generate("output.s");
+        std::vector<std::string> mips_assembly = generator.generate("output.s");
+        std::cout<<"\nGenerated Successfully\n";
+        for(int i=0;i<mips_assembly.size();i++)
+        {
+            std::cout<<mips_assembly[i]<<' ';
+        }
+        std::cout<<'\n';
+        MipsAssembler assembler;
+        assembler.assemble(mips_assembly, "output.hex");
         std::cout << "\nSuccessfully generated MIPS assembly in output.s" << std::endl;
 
     } catch (const std::runtime_error& e) {
