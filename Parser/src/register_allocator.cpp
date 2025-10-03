@@ -3,7 +3,7 @@
 
 RegisterAllocator::RegisterAllocator() {
     // Pool of available temporary registers ($t0-$t9)
-    available_registers = {"$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8", "$t9"};
+    available_registers = {"$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6"};
 }
 
 // Get a free register from the pool

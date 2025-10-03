@@ -5,7 +5,7 @@
 #include <vector>
 #include <map>
 #include <cstdint>
-#include "iostream"
+
 class MipsAssembler {
 public:
     MipsAssembler();
@@ -13,7 +13,9 @@ public:
 
 private:
     std::map<std::string, uint8_t> registerMap;
-    uint32_t instructionToMachineCode(const std::string& line);
+    std::map<std::string, uint32_t> symbolTable;
+
+    uint32_t instructionToMachineCode(const std::string& line, uint32_t current_address);
 };
 
 #endif

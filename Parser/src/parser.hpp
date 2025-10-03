@@ -5,8 +5,7 @@
 #include <vector>
 #include <cstdint>
 
-// Enum and Instruction struct remain the same
-enum class BytecodeFormat { UNKNOWN, KATS, OATS };
+enum class BytecodeFormat { UNKNOWN, OATS };
 
 struct Instruction {
     std::string name;
@@ -15,31 +14,19 @@ struct Instruction {
 
 class Parser {
 public:
-    // Old constructor for file-based parsing
-    Parser(const std::string& filename); 
-    
-    // NEW constructor for preprocessed string-based parsing
-    Parser(const std::string& hex_data, bool is_preprocessed); 
+    // New constructor for raw byte-based parsing
+    Parser(const std::vector<uint8_t>& bytes); 
 
     void parse();
     void printInstructions() const;
     const std::vector<Instruction>& getInstructions() const;
 
 private:
-    std::string filename;
-    std::string hex_stream; // NEW: Store the hex stream
-    bool is_stream_based = false; // NEW: Flag to indicate parsing mode
-
+    const std::vector<uint8_t>& bytecode_bytes; // Use a const reference to avoid copying
     std::vector<Instruction> instructions;
-    int instructionCount = 0;
-    BytecodeFormat format = BytecodeFormat::UNKNOWN;
 
-    std::vector<uint8_t> hexStringToBytes(const std::string& hex);
-    void parseHeader(const std::vector<uint8_t>& bytes);
-    void parseInstruction(const std::vector<uint8_t>& bytes);
-
-    // New helper to get operand size
-    int getOperandSize(uint8_t opcode); 
+    // Helper to read a 4-byte little-endian integer and advance the position
+    int read_le32(size_t& pos);
 };
 
 #endif
