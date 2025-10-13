@@ -73,6 +73,16 @@ This component is a stack-based virtual machine designed to directly run the com
     ```
 - The input.o is obtained as output from the Assembler&Linker Team.
 
+## Testing on QEMU
+
+To test on QEMU run the following commands in order
+1. ```mips-linux-gnu-g++ -O2 -march=mips32 -mabi=32 main.cpp parser.cpp mips_generator.cpp vm_simulator.cpp register_allocator.cpp mips_assembler.cpp -o program_mips```
+2. ```qemu-mips -L /usr/mips-linux-gnu ./program_mips input_2.o```
+3. ```mips-linux-gnu-gcc -mabi=32 -march=mips32 -static -o output_executable output.s```
+4. ```qemu-mips ./output_executable```
+5. ```echo $?```
+
+
 ## Modules
 For module-wise analysis, read the following files
 
