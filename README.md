@@ -77,7 +77,9 @@ This component is a stack-based virtual machine designed to directly run the com
 For module-wise analysis, read the following files
 
 https://hackmd.io/@saimadhavchakrala/BJ3ZUUxcgl
+
 https://hackmd.io/@saimadhavchakrala/SJKPhOO9el
+
 https://hackmd.io/@saimadhavchakrala/H1O355Rige
 
 ## Future work
