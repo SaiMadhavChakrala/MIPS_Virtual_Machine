@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
         // Get the code section size from the header at offset 4
         uint32_t code_section_size = read_le32(header_bytes, 4);
         
-        std::cout << "Detected Code Section Size: " << code_section_size << " bytes" << std::endl;
+        // std::cout << "Detected Code Section Size: " << code_section_size << " bytes" << std::endl;
         
         // Read the exact bytes of the code section
         std::vector<uint8_t> code_bytes(code_section_size);
@@ -63,21 +63,28 @@ int main(int argc, char* argv[]) {
         std::cout << "\n--- Intermediate Representation ---" << std::endl;
         parser.printInstructions();
 
+        int stack_size_max = 0;
+        for(int i=0; i < instructions.size(); i++) {
+            if(instructions[i].name == "ICONST") {
+                stack_size_max++;
+            }
+        }
+
         // --- Stage 2: Simulation ---
         VMSimulator simulator(instructions);
         simulator.run();
 
         // --- Stage 3: MIPS Generation ---
-        MipsGenerator generator(instructions);
-        std::vector<std::string> mips_assembly = generator.generate("output.s");
-        std::cout << "\nGenerated Successfully\n";
+        MipsGenerator generator(instructions );
+        std::vector<std::string> mips_assembly = generator.generate("output.s", stack_size_max);
+        std::cout << "\nMIPS assemblyGenerated Successfully\n";
         for (const auto& line : mips_assembly) {
             std::cout << line;
         }
         
         MipsAssembler assembler;
         assembler.assemble(mips_assembly, "output.hex");
-        std::cout << "\nSuccessfully generated MIPS assembly in output.s and machine code in output.hex" << std::endl;
+        std::cout << "\nSuccessfully generated MIPS assembly in output.s and machine code in output.bin" << std::endl;
         
     } catch (const std::runtime_error& e) {
         std::cerr << "Error: " << e.what() << std::endl;

@@ -6,7 +6,7 @@
 
 MipsGenerator::MipsGenerator(const std::vector<Instruction>& instructions) : instructions(instructions) {}
 
-std::vector<std::string> MipsGenerator::generate(const std::string& output_filename) {
+std::vector<std::string> MipsGenerator::generate(const std::string& output_filename, int stack_size_max) {
     std::vector<std::string> assembly_lines;
     std::ofstream outfile(output_filename);
     if (!outfile.is_open()) {
@@ -22,7 +22,8 @@ std::vector<std::string> MipsGenerator::generate(const std::string& output_filen
     // Prologue: reserve an aligned local area (2 words = 8 bytes) and init index register $t0 = 0
     assembly_lines.push_back("main:\n");
     assembly_lines.push_back("    # Prologue: allocate 8 bytes for local stack (2 slots) and init index\n");
-    assembly_lines.push_back("    addiu $sp, $sp, -8\n");
+
+    assembly_lines.push_back("    addiu $sp, $sp, -" + std::to_string(stack_size_max*4)  + "\n");
     assembly_lines.push_back("    move  $t0, $zero    # t0 = byte-index into local area (0..8)\n\n");
 
     // Emit labels for every instruction location so JMP Lx works.

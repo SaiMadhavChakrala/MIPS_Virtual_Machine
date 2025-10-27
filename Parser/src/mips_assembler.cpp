@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <iomanip>
 #include <algorithm>
-
+#include <iostream>
 MipsAssembler::MipsAssembler() {
     // Correct, standard MIPS register-to-number mapping
     registerMap["$zero"] = 0; registerMap["$at"] = 1;
@@ -28,7 +28,7 @@ uint32_t MipsAssembler::instructionToMachineCode(const std::string& line, uint32
     ss >> mnemonic;
 
     // --- R-Type Instructions ---
-    if (mnemonic == "add" || mnemonic == "sub" || mnemonic == "and" || mnemonic == "or" || mnemonic == "xor" || mnemonic == "nor" || mnemonic == "slt" || mnemonic == "sltu") {
+    if (mnemonic == "add" || mnemonic == "sub" || mnemonic == "and" || mnemonic == "or" || mnemonic == "xor" || mnemonic == "nor" || mnemonic == "slt" || mnemonic == "sltu" || mnemonic == "addu") {
         std::string rd_str, rs_str, rt_str;
         ss >> rd_str >> rs_str >> rt_str;
         uint8_t rd = registerMap.at(rd_str);
@@ -39,8 +39,10 @@ uint32_t MipsAssembler::instructionToMachineCode(const std::string& line, uint32
         else if (mnemonic == "and") funct = 0x24; else if (mnemonic == "or") funct = 0x25;
         else if (mnemonic == "xor") funct = 0x26; else if (mnemonic == "nor") funct = 0x27;
         else if (mnemonic == "slt") funct = 0x2A; else if (mnemonic == "sltu") funct = 0x2B;
+        else if  (mnemonic == "addu") {funct = 0x21; std::cout<<"----------Reached addu----------------\n"; } 
         return (0x00 << 26) | (rs << 21) | (rt << 16) | (rd << 11) | (0 << 6) | funct;
     }
+
     if (mnemonic == "jr") {
         std::string rs_str;
         ss >> rs_str;

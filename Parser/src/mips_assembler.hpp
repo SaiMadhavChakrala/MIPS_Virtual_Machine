@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <cstdint>
+#include <fstream> // Required for std::ofstream
 
 class MipsAssembler {
 public:
@@ -15,6 +16,8 @@ private:
     std::map<std::string, uint8_t> registerMap;
     std::map<std::string, uint32_t> symbolTable;
 
+    // Writes a minimal, valid ELF header required by QEMU
+    void writeElfHeader(std::ofstream& outfile, uint32_t entry_point, uint32_t program_size);
     uint32_t instructionToMachineCode(const std::string& line, uint32_t current_address);
 };
 

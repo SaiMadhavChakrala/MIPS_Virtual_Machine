@@ -8,7 +8,7 @@
 class MipsGenerator {
 public:
     MipsGenerator(const std::vector<Instruction>& instructions);
-    std::vector<std::string> generate(const std::string& output_filename);
+    std::vector<std::string> generate(const std::string& output_filename, int stack_size_max);
     RegisterAllocator reg_alloc;
 private:
     const std::vector<Instruction>& instructions;
