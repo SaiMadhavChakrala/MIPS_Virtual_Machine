@@ -6,7 +6,6 @@
 #include <map>
 #include <cstdint>
 #include <fstream> // Required for std::ofstream
-
 class MipsAssembler {
 public:
     MipsAssembler();

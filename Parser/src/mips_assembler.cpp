@@ -39,8 +39,24 @@ uint32_t MipsAssembler::instructionToMachineCode(const std::string& line, uint32
         else if (mnemonic == "and") funct = 0x24; else if (mnemonic == "or") funct = 0x25;
         else if (mnemonic == "xor") funct = 0x26; else if (mnemonic == "nor") funct = 0x27;
         else if (mnemonic == "slt") funct = 0x2A; else if (mnemonic == "sltu") funct = 0x2B;
-        else if  (mnemonic == "addu") {funct = 0x21; std::cout<<"----------Reached addu----------------\n"; } 
+        else if  (mnemonic == "addu") {funct = 0x21; } 
         return (0x00 << 26) | (rs << 21) | (rt << 16) | (rd << 11) | (0 << 6) | funct;
+    }
+    if (mnemonic == "mul" || mnemonic == "div") {
+        std::string rd_str, rs_str, rt_str;
+        ss >> rd_str >> rs_str >> rt_str;
+        uint8_t rd = registerMap.at(rd_str);
+        uint8_t rs = registerMap.at(rs_str);
+        uint8_t rt = registerMap.at(rt_str);
+        
+        uint32_t opcode = 0x1C; // SPECIAL2 opcode
+        
+        // 0x02 = mul funct, 0x03 = div funct
+        uint32_t funct = (mnemonic == "mul") ? 0x02 : 0x03; 
+        
+        // Assembles the 32-bit instruction in hex:
+        // (opcode << 26) | (rs << 21) | (rt << 16) | (rd << 11) | (shamt << 6) | funct
+        return (opcode << 26) | (rs << 21) | (rt << 16) | (rd << 11) | (0 << 6) | funct;
     }
 
     if (mnemonic == "jr") {

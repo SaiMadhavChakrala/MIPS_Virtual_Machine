@@ -3,10 +3,11 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <iostream>
 
 MipsGenerator::MipsGenerator(const std::vector<Instruction>& instructions) : instructions(instructions) {}
 
-std::vector<std::string> MipsGenerator::generate(const std::string& output_filename, int stack_size_max) {
+std::vector<std::string> MipsGenerator::generate(const std::string& output_filename, int stack_size_max, const std::vector<SymbolEntry>& symbol_table) {
     std::vector<std::string> assembly_lines;
     std::ofstream outfile(output_filename);
     if (!outfile.is_open()) {
@@ -26,16 +27,21 @@ std::vector<std::string> MipsGenerator::generate(const std::string& output_filen
     assembly_lines.push_back("    addiu $sp, $sp, -" + std::to_string(stack_size_max*4)  + "\n");
     assembly_lines.push_back("    move  $t0, $zero    # t0 = byte-index into local area (0..8)\n\n");
 
+    int bytes = 0;
+
     // Emit labels for every instruction location so JMP Lx works.
     // We'll iterate by index and place "L<index>:" before the emitted code for that instruction.
     for (size_t idx = 0; idx < instructions.size(); ++idx) {
         const Instruction &instr = instructions[idx];
 
         // Emit label for this instruction index (so JMP can target instruction indices).
-        assembly_lines.push_back("L" + std::to_string(idx) + ":\n");
+        assembly_lines.push_back("L" + std::to_string(bytes) + ":\n");
 
         // Comment showing the original instruction name (helpful for debugging)
         assembly_lines.push_back("    # " + instr.name + "\n");
+
+        bytes+=1;
+        bytes+=instr.operands.size()*4;
 
         // ICONST value: li to t6, push via t0 index
         if (instr.name == "ICONST") {
@@ -151,18 +157,18 @@ std::vector<std::string> MipsGenerator::generate(const std::string& output_filen
     // Default epilogue: if the program falls through to the end, pop top-of-stack (if any) and exit with that value,
     // otherwise exit 0. This mirrors RET behavior for a program without explicit RET.
     assembly_lines.push_back("\n# Default epilogue: exit with top-of-stack (if any) or 0\n");
-    assembly_lines.push_back("    beq   $t0, $zero, L_EPILOGUE_EMPTY\n");
+    assembly_lines.push_back("    beq   $t0, $zero, L_EPILOGUE_EMPTY2\n");
     assembly_lines.push_back("    nop\n");
     assembly_lines.push_back("    addiu $t0, $t0, -4\n");
     assembly_lines.push_back("    addu  $t1, $sp, $t0\n");
     assembly_lines.push_back("    lw    $a0, 0($t1)\n");
-    assembly_lines.push_back("    j L_EPILOGUE_EXIT\n");
+    assembly_lines.push_back("    j L_EPILOGUE_EXIT2\n");
     assembly_lines.push_back("    nop\n");
-    assembly_lines.push_back("L_EPILOGUE_EMPTY:\n");
+    assembly_lines.push_back("L_EPILOGUE_EMPTY2:\n");
     assembly_lines.push_back("    addiu $a0, $zero, 0\n");
-    assembly_lines.push_back("L_EPILOGUE_EXIT:\n");
+    assembly_lines.push_back("L_EPILOGUE_EXIT2:\n");
     assembly_lines.push_back("    # free local area\n");
-    assembly_lines.push_back("    addiu $sp, $sp, 8\n");
+    assembly_lines.push_back("    addiu $sp, $sp, "  + std::to_string(stack_size_max*4));
     assembly_lines.push_back("    # Linux O32 exit\n");
     assembly_lines.push_back("    addiu $v0, $zero, 4001\n");
     assembly_lines.push_back("    syscall\n");
